@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: rag-chatbot
+
+qdrant:
+  host: localhost
+  port: 6333
+  collection-name: rag-documents
+  vector-size: 384  # BGE-small-en-v1.5 embedding size
+
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY:sk-032df39c947b4979b1f556ec51c03124}
+  api-url: https://api.deepseek.com/v1/chat/completions
+  model: deepseek-chat
+
+embedding:
+  model-name: BAAI/bge-small-en-v1.5
+  model-path: ./models
+
+server:
+  port: 8080
