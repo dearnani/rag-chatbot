@@ -1,6 +1,8 @@
 package com.rag.chatbot.controller;
 
 import com.rag.chatbot.service.RagPipelineService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -16,8 +18,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rag")
 @RequiredArgsConstructor
+@Tag(name = "RAG Bot API", description = "Endpoints for RAG Chatbot operations")
 public class RagController {
-    
+
     private static final Logger log = LoggerFactory.getLogger(RagController.class);
 
     private final RagPipelineService ragPipelineService;
@@ -25,6 +28,7 @@ public class RagController {
     /**
      * Process a query through the RAG pipeline
      */
+    @Operation(summary = "Query the RAG pipeline", description = "Sends a natural language query to the RAG pipeline and returns the generated response.")
     @PostMapping("/query")
     public ResponseEntity<QueryResponse> query(@RequestBody QueryRequest request) {
         try {
@@ -40,11 +44,13 @@ public class RagController {
     /**
      * Index documents into the vector database
      */
+    @Operation(summary = "Index Documents", description = "Ingests a list of text documents into the vector database for retrieval.")
     @PostMapping("/index")
     public ResponseEntity<IndexResponse> index(@RequestBody IndexRequest request) {
         try {
             ragPipelineService.indexDocuments(request.getTexts());
-            return ResponseEntity.ok(new IndexResponse("Successfully indexed " + request.getTexts().size() + " documents"));
+            return ResponseEntity
+                    .ok(new IndexResponse("Successfully indexed " + request.getTexts().size() + " documents"));
         } catch (Exception e) {
             log.error("Error indexing documents", e);
             return ResponseEntity.internalServerError()
@@ -55,7 +61,7 @@ public class RagController {
     @Data
     private static class QueryRequest {
         private String query;
-        
+
         public String getQuery() {
             return query;
         }
@@ -73,7 +79,7 @@ public class RagController {
     @Data
     private static class IndexRequest {
         private List<String> texts;
-        
+
         public List<String> getTexts() {
             return texts;
         }
@@ -88,4 +94,3 @@ public class RagController {
         }
     }
 }
-
