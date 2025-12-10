@@ -74,6 +74,65 @@ public class DeepSeekService {
         }
     }
 
+    /**
+     * Extract entities and relationships from text using DeepSeek
+     */
+    public GraphData extractEntities(String text) {
+        try {
+            String systemPrompt = """
+                    You are an expert Knowledge Graph engineer. Your task is to extract entities and relationships from the provided text.
+                    Return ONLY a JSON object with the following structure:
+                    {
+                      "entities": [
+                        {"name": "Entity Name", "type": "Person/Company/Location/Concept", "description": "Short description"}
+                      ],
+                      "relationships": [
+                        {"subject": "Entity Name", "predicate": "RELATIONSHIP_TYPE", "object": "Entity Name", "objectType": "Type"}
+                      ]
+                    }
+                    Do not include any markdown formatting or explanation. Just the raw JSON.
+                    """;
+
+            List<ChatMessage> messages = new ArrayList<>();
+            messages.add(new ChatMessage("system", systemPrompt));
+            messages.add(new ChatMessage("user", text));
+
+            // Use JSON mode if supported, otherwise rely on prompt engineering
+            ChatRequest request = new ChatRequest(model, messages, 0.3, 2000);
+
+            String requestBody = objectMapper.writeValueAsString(request);
+
+            ChatResponse response = webClient.post()
+                    .uri(apiUrl)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(ChatResponse.class)
+                    .block();
+
+            if (response != null && response.choices() != null && !response.choices().isEmpty()) {
+                String content = response.choices().get(0).message().content();
+                // Clean up markdown code blocks if present
+                content = content.replace("```json", "").replace("```", "").trim();
+                return objectMapper.readValue(content, GraphData.class);
+            }
+
+            return new GraphData(List.of(), List.of());
+        } catch (Exception e) {
+            log.error("Failed to extract entities from DeepSeek", e);
+            // Return empty data on failure to not block the pipeline
+            return new GraphData(List.of(), List.of());
+        }
+    }
+
+    public record GraphData(List<EntityData> entities, List<RelationData> relationships) {
+    }
+
+    public record EntityData(String name, String type, String description) {
+    }
+
+    public record RelationData(String subject, String predicate, String object, String objectType) {
+    }
+
     record ChatRequest(
             String model,
             List<ChatMessage> messages,

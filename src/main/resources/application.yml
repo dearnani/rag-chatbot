@@ -1,15 +1,17 @@
 spring:
   application:
     name: rag-chatbot
-
+  
   neo4j:
     uri: ${NEO4J_URI:bolt://localhost:7687}
     authentication:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:password}
 
+
+
 qdrant:
-  host: localhost
+  host: ${QDRANT_HOST:localhost}
   port: 6333
   collection-name: rag-documents
   vector-size: 384  # BGE-small-en-v1.5 embedding size

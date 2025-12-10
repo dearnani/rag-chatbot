@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan()
+@org.springframework.boot.context.properties.ConfigurationPropertiesScan
 public class RagChatbotApplication {
 
     public static void main(String[] args) {

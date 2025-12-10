@@ -44,8 +44,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Qdrant will be accessed via REST API -->
-
         <!-- HTTP Client for DeepSeek API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

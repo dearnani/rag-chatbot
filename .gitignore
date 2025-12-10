@@ -4,3 +4,5 @@ target/
 .vscode/
 *.iml
 .DS_Store
+neo4j_data/
+qdrant_data/

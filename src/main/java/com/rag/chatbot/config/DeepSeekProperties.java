@@ -1,9 +1,7 @@
 package com.rag.chatbot.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
 @ConfigurationProperties(prefix = "deepseek")
 public class DeepSeekProperties {
     private String apiKey = "sk-032df39c947b4979b1f556ec51c03124";
