@@ -5,18 +5,12 @@ import com.rag.chatbot.service.RagPipelineService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,6 +33,12 @@ class RagControllerTest {
     // prevent context failure
     @MockitoBean
     private com.rag.chatbot.service.QdrantService qdrantService;
+
+    @MockitoBean
+    private com.rag.chatbot.config.DeepSeekConfig deepSeekConfig;
+
+    @MockitoBean
+    private com.rag.chatbot.config.QdrantConfig qdrantConfig;
 
     @Test
     void testQuery_success() throws Exception {
@@ -73,7 +73,8 @@ class RagControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.response").value("Error: Processing failed"));
+                .andExpect(jsonPath("$.response")
+                        .value("Error processing query: java.lang.RuntimeException: Processing failed"));
     }
 
     @Test

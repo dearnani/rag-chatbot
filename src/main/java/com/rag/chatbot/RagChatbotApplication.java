@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
+@ComponentScan(basePackages = "com.rag.chatbot")
 @org.springframework.boot.context.properties.ConfigurationPropertiesScan
 public class RagChatbotApplication {
 

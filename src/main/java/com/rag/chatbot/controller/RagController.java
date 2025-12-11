@@ -37,7 +37,7 @@ public class RagController {
         } catch (Exception e) {
             log.error("Error processing query", e);
             return ResponseEntity.internalServerError()
-                    .body(new QueryResponse("Error: " + e.getMessage()));
+                    .body(new QueryResponse("Error processing query: " + e.toString()));
         }
     }
 
@@ -54,7 +54,7 @@ public class RagController {
         } catch (Exception e) {
             log.error("Error indexing documents", e);
             return ResponseEntity.internalServerError()
-                    .body(new IndexResponse("Error: " + e.getMessage()));
+                    .body(new IndexResponse("Error indexing documents: " + e.toString()));
         }
     }
 

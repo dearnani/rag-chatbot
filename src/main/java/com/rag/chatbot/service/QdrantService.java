@@ -45,8 +45,10 @@ public class QdrantService {
 
             if (info == null || info.status() == null) {
                 // Create collection
+                OptimizerConfig optimizerConfig = new OptimizerConfig(10); // Index even with few points
                 CreateCollectionRequest request = new CreateCollectionRequest(
-                        new VectorConfig(vectorSize, "Cosine"));
+                        new VectorConfig(vectorSize, "Cosine"),
+                        optimizerConfig);
 
                 webClient.put()
                         .uri("/collections/{collection}", collectionName)
@@ -59,6 +61,11 @@ public class QdrantService {
             } else {
                 log.info("Qdrant collection already exists: {}", collectionName);
             }
+
+            // Always update optimizer config to ensure indexing threshold is low enough for
+            // small datasets
+            updateOptimizerConfig();
+
         } catch (Exception e) {
             log.error("Failed to initialize Qdrant collection", e);
             throw new RuntimeException("Failed to initialize Qdrant collection", e);
@@ -171,8 +178,30 @@ public class QdrantService {
         }
     }
 
+    /**
+     * Update optimizer configuration for existing collection
+     */
+    private void updateOptimizerConfig() {
+        try {
+            OptimizerConfig optimizerConfig = new OptimizerConfig(10);
+            UpdateCollectionRequest request = new UpdateCollectionRequest(optimizerConfig);
+
+            webClient.patch()
+                    .uri("/collections/{collection}", collectionName)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            log.debug("Updated optimizer config for collection: {}", collectionName);
+        } catch (Exception e) {
+            log.warn("Failed to update optimizer config for collection (non-fatal): {}", e.getMessage());
+        }
+    }
+
     // DTOs for Qdrant API
-    private record CreateCollectionRequest(VectorConfig vectors) {
+    private record CreateCollectionRequest(VectorConfig vectors,
+            @JsonProperty("optimizers_config") OptimizerConfig optimizersConfig) {
     }
 
     private record VectorConfig(int size, String distance) {
@@ -197,6 +226,12 @@ public class QdrantService {
     }
 
     private record ScoredPoint(String id, Double score, Map<String, Object> payload) {
+    }
+
+    private record OptimizerConfig(@JsonProperty("indexing_threshold") Integer indexingThreshold) {
+    }
+
+    private record UpdateCollectionRequest(@JsonProperty("optimizers_config") OptimizerConfig optimizersConfig) {
     }
 
     /**

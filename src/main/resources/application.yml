@@ -7,9 +7,6 @@ spring:
     authentication:
       username: ${NEO4J_USERNAME:neo4j}
       password: ${NEO4J_PASSWORD:password}
-
-
-
 qdrant:
   host: ${QDRANT_HOST:localhost}
   port: 6333
