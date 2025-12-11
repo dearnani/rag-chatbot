@@ -14,13 +14,19 @@ qdrant:
   vector-size: 384  # BGE-small-en-v1.5 embedding size
 
 deepseek:
-  api-key: ${DEEPSEEK_API_KEY:sk-032df39c947b4979b1f556ec51c03124}
+  api-key: ${DEEPSEEK_API_KEY:sk-3faf2ba2c1e949e2b821ceecd49adc8e}
   api-url: https://api.deepseek.com/v1/chat/completions
   model: deepseek-chat
 
 embedding:
   model-name: BAAI/bge-small-en-v1.5
   model-path: ./models
+
+langfuse:
+  public-key: ${LANGFUSE_PUBLIC_KEY:pk-lf-1234567890}
+  secret-key: ${LANGFUSE_SECRET_KEY:sk-lf-1234567890}
+  host: ${LANGFUSE_HOST:https://cloud.langfuse.com}
+
 
 server:
   port: 8080

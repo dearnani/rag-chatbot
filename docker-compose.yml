@@ -26,11 +26,69 @@ services:
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USERNAME=neo4j
       - NEO4J_PASSWORD=password
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_API_KEY=sk-3faf2ba2c1e949e2b821ceecd49adc8e
+      - LANGFUSE_PUBLIC_KEY=pk-lf-1234567890
+      - LANGFUSE_SECRET_KEY=sk-lf-1234567890
+      - LANGFUSE_HOST=http://langfuse:3000
     depends_on:
       - qdrant
       - neo4j
+      - langfuse
+
+  postgres:
+    image: postgres:15
+    container_name: langfuse-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: langfuse
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Required
+      DATABASE_URL: postgresql://langfuse:langfuse@postgres:5432/langfuse
+      NEXTAUTH_SECRET: "super-secret-key"
+      SALT: "some-random-salt"
+      ENCRYPTION_KEY: "5834dc0e9fd903a331cc9be19a62b62b9191a3fb0c614eead7b77e5ed3e8027b"
+
+      # OPTIONAL (recommended)
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY: "false"
+      
+      # V2 Postgres-only support
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+
+      # Auto-provisioning (Merged from previous config to ensure chatbot works)
+      LANGFUSE_INIT_ORG_ID: org-123
+      LANGFUSE_INIT_ORG_NAME: MyOrg
+      LANGFUSE_INIT_PROJECT_ID: project-123
+      LANGFUSE_INIT_PROJECT_NAME: MyProject
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-1234567890
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-1234567890
+      LANGFUSE_INIT_USER_EMAIL: admin@langfuse.com
+      LANGFUSE_INIT_USER_NAME: Admin
+      LANGFUSE_INIT_USER_PASSWORD: password
+
+    ports:
+      - "3000:3000"
 
 volumes:
   qdrant_data:
   neo4j_data:
+  pgdata:

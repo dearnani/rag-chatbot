@@ -91,3 +91,36 @@ To run the container standalone (ensure dependencies are reachable, e.g., via Do
 ```bash
 docker run -p 8080:8080 rag-chatbot
 ```
+
+## Langfuse Observability
+
+This project includes a self-hosted Langfuse stack for LLM observability and tracing.
+
+### Setup & Access
+
+1.  **Start the Stack**:
+    When you run `docker-compose up --build -d`, the Langfuse services (Server, Worker, Postgres, ClickHouse, Redis) are automatically started.
+
+2.  **Access Dashboard**:
+    - URL: `http://localhost:3000`
+    - Email: `admin@langfuse.com`
+    - Password: `password`
+
+    *Note: The project, organization, and API keys are auto-provisioned on startup via `LANGFUSE_INIT_*` environment variables.*
+
+### Verification
+
+To verify that tracing is working:
+
+1.  **Send a Chat Query**:
+    Use Swagger UI (`http://localhost:8080/swagger-ui/index.html`) or `curl` to send a request:
+    ```bash
+    curl -X POST "http://localhost:8080/api/rag/query" \
+         -H "Content-Type: application/json" \
+         -d '{"query": "Test query for Langfuse"}'
+    ```
+
+2.  **Check Traces**:
+    - Log in to the Langfuse Dashboard (`http://localhost:3000`).
+    - Navigate to the **"MyProject"** project.
+    - Go to **Traces**. You should see a new trace for `deepseek-generation` corresponding to your request.

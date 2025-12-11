@@ -27,7 +27,10 @@ public class DeepSeekService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    public DeepSeekService(com.rag.chatbot.config.DeepSeekProperties deepSeekProperties) {
+    private final com.langfuse.client.LangfuseClient langfuseClient;
+
+    public DeepSeekService(com.rag.chatbot.config.DeepSeekProperties deepSeekProperties,
+            com.langfuse.client.LangfuseClient langfuseClient) {
         this.apiKey = deepSeekProperties.getApiKey();
         this.apiUrl = !deepSeekProperties.getApiUrl().isEmpty() ? deepSeekProperties.getApiUrl()
                 : "http://localhost:8080/v1/chat/completions";
@@ -37,23 +40,28 @@ public class DeepSeekService {
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
+        this.langfuseClient = langfuseClient;
     }
 
     /**
      * Generate a response using DeepSeek API
      */
     public String generateResponse(String userMessage, String context) {
+        long startTime = System.currentTimeMillis();
+        String systemPrompt = "You are a helpful assistant. Use the following context to answer the user's question. "
+                +
+                "If the context doesn't contain relevant information, say so.\n\nContext:\n" + context;
+
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(new ChatMessage("system", systemPrompt));
+        messages.add(new ChatMessage("user", userMessage));
+
+        ChatRequest request = new ChatRequest(model, messages, 0.7, 1000);
+
+        String result = "Sorry, I couldn't generate a response.";
+        String metadata = null;
+
         try {
-            String systemPrompt = "You are a helpful assistant. Use the following context to answer the user's question. "
-                    +
-                    "If the context doesn't contain relevant information, say so.\n\nContext:\n" + context;
-
-            List<ChatMessage> messages = new ArrayList<>();
-            messages.add(new ChatMessage("system", systemPrompt));
-            messages.add(new ChatMessage("user", userMessage));
-
-            ChatRequest request = new ChatRequest(model, messages, 0.7, 1000);
-
             String requestBody = objectMapper.writeValueAsString(request);
 
             ChatResponse response = webClient.post()
@@ -64,13 +72,43 @@ public class DeepSeekService {
                     .block();
 
             if (response != null && response.choices() != null && !response.choices().isEmpty()) {
-                return response.choices().get(0).message().content();
+                result = response.choices().get(0).message().content();
             }
-
-            return "Sorry, I couldn't generate a response.";
+            return result;
         } catch (Exception e) {
             log.error("Failed to generate response from DeepSeek", e);
+            metadata = e.getMessage();
             throw new RuntimeException("Failed to generate response", e);
+        } finally {
+            try {
+                // Trace generation in Langfuse
+                com.langfuse.client.resources.ingestion.types.CreateGenerationBody body = com.langfuse.client.resources.ingestion.types.CreateGenerationBody
+                        .builder()
+                        .name("deepseek-generation")
+                        .model(model)
+                        .input(messages)
+                        .output(result)
+                        .startTime(java.time.Instant.ofEpochMilli(startTime).atOffset(java.time.ZoneOffset.UTC))
+                        .endTime(java.time.Instant.now().atOffset(java.time.ZoneOffset.UTC))
+                        .build();
+
+                com.langfuse.client.resources.ingestion.types.CreateGenerationEvent event = com.langfuse.client.resources.ingestion.types.CreateGenerationEvent
+                        .builder()
+                        .id(java.util.UUID.randomUUID().toString())
+                        .timestamp(java.time.Instant.now().toString())
+                        .body(body)
+                        .build();
+
+                com.langfuse.client.resources.ingestion.requests.IngestionRequest ingestionRequest = com.langfuse.client.resources.ingestion.requests.IngestionRequest
+                        .builder()
+                        .batch(java.util.List.of(
+                                com.langfuse.client.resources.ingestion.types.IngestionEvent.generationCreate(event)))
+                        .build();
+
+                langfuseClient.ingestion().batch(ingestionRequest);
+            } catch (Exception e) {
+                log.warn("Failed to send trace to Langfuse", e);
+            }
         }
     }
 
