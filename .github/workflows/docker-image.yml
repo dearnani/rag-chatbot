@@ -17,3 +17,5 @@ jobs:
     - name: Build the Docker image
       #run:  docker-compose up --build -d --tag my-image-name:$(date +%s)
       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Snyk Container Scan
+      run: snyk container monitor my-image-name:latest --file=Dockerfile || true
