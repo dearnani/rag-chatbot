@@ -1,0 +1,37 @@
+name: Snyk Code + Open Source + IaC
+
+on:
+  push:
+    branches: ["rag"]
+  pull_request:
+    branches: ["rag"]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  snyk-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Snyk CLI
+        uses: snyk/actions/setup@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Code (SAST)
+        run: snyk code test --sarif > snyk-code.sarif || true
+
+      - name: Snyk Open Source (SCA)
+        run: snyk monitor --all-projects || true
+
+      - name: Snyk IaC
+        run: snyk iac test --report || true
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-code.sarif
