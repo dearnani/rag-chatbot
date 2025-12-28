@@ -10,7 +10,6 @@
         <version>3.4.0</version>
         <relativePath/>
     </parent>
-
     <groupId>com.rag</groupId>
     <artifactId>rag-chatbot</artifactId>
     <version>1.0.0</version>
