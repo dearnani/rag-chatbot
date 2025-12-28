@@ -15,33 +15,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # Checkout source
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # Install Snyk CLI
-      - name: Install Snyk
+      - name: Install Snyk CLI
         uses: snyk/actions/setup@master
 
-      # Authenticate explicitly (MANDATORY)
+      # Authenticate Snyk (MANDATORY)
       - name: Authenticate Snyk
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
       # ---------- Snyk Code (SAST) ----------
-      - name: Snyk Code (SARIF)
+      # Generates VALID SARIF only
+      - name: Snyk Code Test (SARIF)
         run: snyk code test --sarif --json-file-output=snyk-code.sarif
         continue-on-error: true
 
       # ---------- Snyk Open Source (SCA) ----------
-      - name: Snyk Open Source
+      - name: Snyk Open Source Scan
         run: snyk monitor --all-projects
         continue-on-error: true
 
       # ---------- Snyk IaC ----------
-      - name: Snyk IaC
+      - name: Snyk IaC Scan
         run: snyk iac test
         continue-on-error: true
 
-      # ---------- Upload SARIF ----------
-      - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk-code.sarif
+      # ---------- Upload SARIF to GitHub ----------
+      - name: Upl
