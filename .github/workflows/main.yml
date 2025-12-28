@@ -17,20 +17,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Snyk CLI
+      # Install Snyk CLI
+      - name: Install Snyk
         uses: snyk/actions/setup@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Code (SAST)
-        run: snyk code test --sarif > snyk-code.sarif || true
+      # Authenticate explicitly (MANDATORY)
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Open Source (SCA)
-        run: snyk monitor --all-projects || true
+      # ---------- Snyk Code (SAST) ----------
+      - name: Snyk Code (SARIF)
+        run: snyk code test --sarif --json-file-output=snyk-code.sarif
+        continue-on-error: true
 
+      # ---------- Snyk Open Source (SCA) ----------
+      - name: Snyk Open Source
+        run: snyk monitor --all-projects
+        continue-on-error: true
+
+      # ---------- Snyk IaC ----------
       - name: Snyk IaC
-        run: snyk iac test --report || true
+        run: snyk iac test
+        continue-on-error: true
 
+      # ---------- Upload SARIF ----------
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
